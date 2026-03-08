@@ -196,7 +196,8 @@
   .footer-text { color: var(--muted); font-size: 0.8rem; }
   .footer-right { color: var(--muted); font-size: 0.8rem; text-align: right; }
 
-  .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal { opacity: 1; transform: translateY(0); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .reveal.hidden { opacity: 0; transform: translateY(30px); }
   .reveal.visible { opacity: 1; transform: translateY(0); }
 
   @media (max-width: 768px) {
@@ -489,7 +490,7 @@
           <span class="channel-arrow">→</span>
         </a>
 
-        <a href="/cdn-cgi/l/email-protection#4f212a2d3a2320262b3b2a2c273c3b3a2b26200f28222e2623612c2022703c3a2d252a2c3b720a392a213b6a7d7f0a213e3a263d366a7d7f626a7d7f012a2d3a2320262b6a7d7f0a392a213b3c" class="channel-card email reveal">
+        <a href="mailto:nebuloidtechstudio@gmail.com" class="channel-card email reveal">
           <div class="channel-icon">📧</div>
           <div class="channel-text">
             <span class="channel-label">Email Us</span>
@@ -520,9 +521,10 @@
     <div class="contact-form-card reveal">
       <h3>Send an Enquiry</h3>
       <p>Tell us about your event and we'll get back with a custom proposal.</p>
-      <form class="contact-form" id="enquiryForm" action="https://formspree.io/f/xeoqgpan" method="POST">
-        <input type="hidden" name="_replyto" value="nebuloidtechstudio@gmail.com">
-        <input type="hidden" name="_subject" value="New Enquiry – Nebuloid Events">
+      <form class="contact-form" id="enquiryForm">
+        <input type="hidden" name="access_key" value="d361607b-0f81-4f4e-9fe0-adbf8da82aca">
+        <input type="hidden" name="subject" value="New Enquiry – Nebuloid Events">
+        <input type="hidden" name="from_name" value="Nebuloid Events Website">
         <div class="form-row">
           <input type="text" name="name" placeholder="Your Name" required />
           <input type="tel" name="phone" placeholder="Phone Number" />
@@ -561,13 +563,15 @@
 </a>
 <div class="wa-tooltip">Chat on WhatsApp</div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
+  const revealEls = document.querySelectorAll('.reveal');
+  revealEls.forEach(el => el.classList.add('hidden'));
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(e => {
-      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+      if (e.isIntersecting) { e.target.classList.remove('hidden'); e.target.classList.add('visible'); observer.unobserve(e.target); }
     });
-  }, { threshold: 0.12 });
-  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  }, { threshold: 0.08 });
+  revealEls.forEach(el => observer.observe(el));
 
   // Hamburger menu
   const hamburger = document.getElementById('navHamburger');
@@ -603,19 +607,21 @@
       submitBtn.textContent = 'Sending…';
       submitBtn.disabled = true;
       try {
-        const res = await fetch(form.action, {
+        const formData = new FormData(form);
+        const res = await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
-          body: new FormData(form),
+          body: formData,
           headers: { 'Accept': 'application/json' }
         });
-        if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
           formStatus.textContent = '✓ Message sent! We\'ll be in touch soon.';
           formStatus.style.color = 'var(--accent2)';
           formStatus.style.display = 'block';
           form.reset();
           submitBtn.textContent = 'Message Sent ✓';
         } else {
-          throw new Error('Server error');
+          throw new Error(data.message || 'Server error');
         }
       } catch {
         formStatus.textContent = 'Oops! Something went wrong. Please try again.';
