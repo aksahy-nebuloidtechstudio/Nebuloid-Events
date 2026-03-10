@@ -726,11 +726,35 @@
     .match-row { flex-direction: column; }
     .match-arrow { transform: rotate(90deg); }
   }
+
+  /* ====== MUSIC BUTTON ====== */
+  #music-toggle {
+    position: fixed; bottom: 18px; right: 18px; z-index: 9998;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    border: 2.5px solid rgba(255,255,255,0.55);
+    color: #fff; font-size: 1.5rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  #music-toggle:hover { background: rgba(255,255,255,0.38); transform: scale(1.1); }
+  #music-toggle.muted { opacity: 0.55; }
+  @keyframes musicPulse {
+    0%,100% { box-shadow: 0 4px 18px rgba(0,0,0,0.28), 0 0 0 0 rgba(255,214,0,0.4); }
+    50%      { box-shadow: 0 4px 18px rgba(0,0,0,0.28), 0 0 0 8px rgba(255,214,0,0); }
+  }
+  #music-toggle:not(.muted) { animation: musicPulse 2.5s ease-in-out infinite; }
 </style>
 </head>
 <body>
 
 <div class="bg-pattern"></div>
+
+<!-- Music Toggle Button -->
+<button id="music-toggle" title="Toggle Music" onclick="toggleMusic()">🎵</button>
 <svg class="mandala-bg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
   <circle cx="250" cy="250" r="200" stroke="#F4A825" stroke-width="1"/>
   <circle cx="250" cy="250" r="160" stroke="#7B5EA7" stroke-width="0.5"/>
@@ -1077,6 +1101,140 @@
 </div>
 
 <script>
+// ===== BACKGROUND MUSIC ENGINE (Web Audio API) =====
+(function() {
+  let audioCtx = null, masterGain = null, musicPlaying = false, musicMuted = false;
+  let oscillators = [], schedulerTimer = null, nextNoteTime = 0, currentNote = 0;
+
+  // Cheerful Indian-inspired kids melody (pentatonic-ish in C major)
+  const melody = [
+    // C4, E4, G4, A4, C5, A4, G4, E4 repeated with variation
+    {note: 261.63, dur: 0.25}, {note: 329.63, dur: 0.25},
+    {note: 392.00, dur: 0.25}, {note: 440.00, dur: 0.25},
+    {note: 523.25, dur: 0.5},  {note: 440.00, dur: 0.25},
+    {note: 392.00, dur: 0.25}, {note: 329.63, dur: 0.5},
+    {note: 261.63, dur: 0.25}, {note: 329.63, dur: 0.25},
+    {note: 392.00, dur: 0.25}, {note: 523.25, dur: 0.25},
+    {note: 659.25, dur: 0.5},  {note: 523.25, dur: 0.25},
+    {note: 440.00, dur: 0.25}, {note: 392.00, dur: 0.5},
+    {note: 329.63, dur: 0.25}, {note: 392.00, dur: 0.25},
+    {note: 440.00, dur: 0.25}, {note: 523.25, dur: 0.25},
+    {note: 440.00, dur: 0.25}, {note: 392.00, dur: 0.25},
+    {note: 329.63, dur: 0.25}, {note: 261.63, dur: 0.75},
+  ];
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+    // Soft reverb via convolver-like delay
+    const delay = audioCtx.createDelay(0.3);
+    delay.delayTime.value = 0.18;
+    const delayGain = audioCtx.createGain();
+    delayGain.gain.value = 0.25;
+    masterGain.connect(delay);
+    delay.connect(delayGain);
+    delayGain.connect(audioCtx.destination);
+    masterGain.connect(audioCtx.destination);
+  }
+
+  function playNote(freq, startTime, duration) {
+    if (!audioCtx || musicMuted) return;
+    // Main tone — xylophone-like (sine + triangle blend)
+    const osc = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = 'sine';
+    osc2.type = 'triangle';
+    osc.frequency.value = freq;
+    osc2.frequency.value = freq * 2; // octave for brightness
+
+    const g2 = audioCtx.createGain();
+    g2.gain.value = 0.12;
+
+    osc.connect(gain);
+    osc2.connect(g2);
+    g2.connect(gain);
+    gain.connect(masterGain);
+
+    // Snappy attack, gentle decay — xylophone feel
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.7, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + Math.min(duration * 1.4, 0.6));
+
+    osc.start(startTime);
+    osc2.start(startTime);
+    osc.stop(startTime + duration + 0.1);
+    osc2.stop(startTime + duration + 0.1);
+  }
+
+  function scheduler() {
+    const lookahead = 0.15;
+    while (nextNoteTime < audioCtx.currentTime + lookahead) {
+      const n = melody[currentNote % melody.length];
+      playNote(n.note, nextNoteTime, n.dur);
+      // Also add a soft bass beat every 4 notes
+      if (currentNote % 4 === 0) {
+        const bassOsc = audioCtx.createOscillator();
+        const bassGain = audioCtx.createGain();
+        bassOsc.type = 'sine';
+        bassOsc.frequency.value = 130.81; // C3
+        bassGain.gain.setValueAtTime(0, nextNoteTime);
+        bassGain.gain.linearRampToValueAtTime(0.5, nextNoteTime + 0.03);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, nextNoteTime + 0.18);
+        bassOsc.connect(bassGain);
+        bassGain.connect(masterGain);
+        bassOsc.start(nextNoteTime);
+        bassOsc.stop(nextNoteTime + 0.2);
+      }
+      nextNoteTime += n.dur * (60 / 148); // ~148 BPM
+      currentNote++;
+    }
+    schedulerTimer = setTimeout(scheduler, 60);
+  }
+
+  function startMusic() {
+    if (musicPlaying) return;
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    nextNoteTime = audioCtx.currentTime + 0.05;
+    musicPlaying = true;
+    scheduler();
+  }
+
+  function stopMusic() {
+    clearTimeout(schedulerTimer);
+    musicPlaying = false;
+  }
+
+  window.toggleMusic = function() {
+    musicMuted = !musicMuted;
+    const btn = document.getElementById('music-toggle');
+    if (musicMuted) {
+      btn.textContent = '🔇';
+      btn.classList.add('muted');
+      if (masterGain) masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
+    } else {
+      btn.textContent = '🎵';
+      btn.classList.remove('muted');
+      if (masterGain) masterGain.gain.setTargetAtTime(0.18, audioCtx.currentTime, 0.2);
+    }
+  };
+
+  // Auto-start music on first user interaction (browser policy)
+  function onFirstInteraction() {
+    startMusic();
+    document.removeEventListener('click', onFirstInteraction);
+    document.removeEventListener('keydown', onFirstInteraction);
+    document.removeEventListener('touchstart', onFirstInteraction);
+  }
+  document.addEventListener('click', onFirstInteraction);
+  document.addEventListener('keydown', onFirstInteraction);
+  document.addEventListener('touchstart', onFirstInteraction);
+})();
+
 // ===== FLOATING PARTICLES =====
 (function spawnParticles() {
   const emojis = ['🪔','🎊','⭐','🌸','🎈','🏵️','🎉','💛','🌺','🎪','🎠','🪅','🌼','🎆','💫','🌟','🪷','🎋'];
