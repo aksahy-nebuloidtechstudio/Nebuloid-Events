@@ -548,6 +548,22 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.3);
   }
 
+  /* ══ GAME TIMER ══ */
+  .game-timer {
+    display: flex; flex-direction: column; align-items: center;
+    background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.35);
+    border-radius: 24px; padding: 4px 14px; min-width: 80px;
+    backdrop-filter: blur(6px);
+  }
+  .game-timer .timer-label { font-size: 0.6rem; color: rgba(255,255,255,0.75); font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1; }
+  .game-timer .timer-val { font-size: 1.15rem; color: #fff; font-weight: 900; line-height: 1.2; text-shadow: 0 1px 6px rgba(0,0,0,0.3); }
+  .game-timer.danger { background: rgba(255,40,40,0.3); border-color: rgba(255,100,100,0.7); animation: timerPulse 0.6s ease-in-out infinite; }
+  .game-timer.best { background: rgba(0,230,118,0.25); border-color: rgba(0,230,118,0.6); }
+  @keyframes timerPulse {
+    0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,60,60,0.4); }
+    50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(255,60,60,0); }
+  }
+
   .game-body { padding: 16px 20px; max-width: 900px; margin: 0 auto; width: 100%; position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
 
   .progress-bar { height: 10px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 0 20px; border: 2px solid rgba(255,255,255,0.15); }
@@ -651,7 +667,7 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.15);
   }
   .piece-emoji { font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
-  .piece-label { font-size: clamp(0.4rem, 0.9vw, 0.6rem); color: #ffffff; font-weight: 800; text-align: center; line-height: 1.2; letter-spacing: 0.3px; text-transform: uppercase; padding: 0 2px; word-break: break-word; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+  .piece-label { font-size: clamp(0.5rem, 0.9vw, 0.65rem); color: #ffffff; font-weight: 800; text-align: center; line-height: 1.2; letter-spacing: 0.3px; text-transform: uppercase; padding: 0 2px; word-break: break-word; text-shadow: 0 1px 3px rgba(0,0,0,0.4); }
   .jigsaw-piece:hover { background: rgba(255,255,255,0.35); transform: scale(1.1) translateY(-3px); border-color: #FFD600; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
   .jigsaw-piece.selected { border: 3px solid #FFD600; background: rgba(255,214,0,0.3); transform: scale(1.12); box-shadow: 0 0 22px rgba(255,214,0,0.6); }
   .jigsaw-piece.correct-pos { background: rgba(0,230,118,0.35); cursor: default; border-color: #00E676; box-shadow: 0 0 16px rgba(0,230,118,0.4); }
@@ -1006,6 +1022,10 @@
     <div style="display:flex;gap:10px;align-items:center;">
       <button class="back-game-btn" onclick="goHome()">← Games</button>
       <div class="score-display" id="jigsaw-score">0/8</div>
+      <div class="game-timer" id="jigsaw-timer">
+        <span class="timer-label">⏱ Time</span>
+        <span class="timer-val" id="jigsaw-timer-val">0:45</span>
+      </div>
       <button class="quit-btn" onclick="openQuitModal()">🚪 Quit</button>
     </div>
   </div>
@@ -1035,6 +1055,10 @@
     <div style="display:flex;gap:10px;align-items:center;">
       <button class="back-game-btn" onclick="goHome()">← Games</button>
       <div class="score-display" id="match-score">0/10</div>
+      <div class="game-timer" id="match-timer">
+        <span class="timer-label">⏱ Time</span>
+        <span class="timer-val" id="match-timer-val">0:45</span>
+      </div>
       <button class="quit-btn" onclick="openQuitModal()">🚪 Quit</button>
     </div>
   </div>
@@ -1422,7 +1446,7 @@ const jigsawData=[
   {emoji:"🐆",label:"Tiger",state:"Madhya Pradesh",hint:"Home of many national parks & tigers!"},
   {emoji:"🌸",label:"Apple Blossom",state:"Himachal Pradesh",hint:"Apple orchards and blooming valleys!"},
   {emoji:"🎭",label:"Kathakali",state:"Kerala",hint:"Land of Kathakali dance!"},
-  {emoji:"🕌",label:"Taj Mahal",state:"Uttar Pradesh",hint:"Taj Mahal stands here!"},
+  {emoji:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 46" style="width:100%;height:100%;max-width:52px;max-height:52px;display:block;"><rect x="1" y="18" width="4" height="24" fill="#F0E6D3" rx="1"/><polygon points="1,18 3,10 5,18" fill="#E8D5B0"/><rect x="43" y="18" width="4" height="24" fill="#F0E6D3" rx="1"/><polygon points="43,18 45,10 47,18" fill="#E8D5B0"/><rect x="10" y="22" width="4" height="20" fill="#EDE4D0" rx="1"/><polygon points="10,22 12,15 14,22" fill="#DCCFB0"/><rect x="34" y="22" width="4" height="20" fill="#EDE4D0" rx="1"/><polygon points="34,22 36,15 38,22" fill="#DCCFB0"/><rect x="14" y="30" width="20" height="12" fill="#F5F0E8" rx="1"/><path d="M20 42 L20 33 Q24 27 28 33 L28 42 Z" fill="#C8B8A0"/><path d="M15 42 L15 37 Q17.5 34 20 37 L20 42 Z" fill="#C8B8A0" opacity="0.7"/><path d="M28 42 L28 37 Q30.5 34 33 37 L33 42 Z" fill="#C8B8A0" opacity="0.7"/><ellipse cx="24" cy="25" rx="7" ry="8" fill="#F5F0E8"/><ellipse cx="22.5" cy="23" rx="2.5" ry="3" fill="white" opacity="0.35"/><line x1="24" y1="17" x2="24" y2="13" stroke="#C8B8A0" stroke-width="1.5" stroke-linecap="round"/><circle cx="24" cy="12.5" r="1.5" fill="#E8D5B0"/><ellipse cx="15.5" cy="30" rx="3.5" ry="3.5" fill="#EDE4D0"/><ellipse cx="32.5" cy="30" rx="3.5" ry="3.5" fill="#EDE4D0"/><rect x="11" y="42" width="26" height="2" fill="#7EC8E3" rx="1" opacity="0.8"/></svg>`,label:"Taj Mahal",state:"Uttar Pradesh",hint:"Taj Mahal stands here!"},
   {emoji:"🌊",label:"Beach",state:"Goa",hint:"Beach paradise of India!"},
   {emoji:"🎪",label:"Festival",state:"Rajasthan",hint:"Land of forts & festivals!"},
   {emoji:"🎋",label:"Bamboo Forest",state:"Meghalaya",hint:"Wettest place on Earth!"},
@@ -1437,7 +1461,8 @@ function initJigsaw() {
   document.getElementById('jigsaw-hint').textContent='Tap a piece from the left to select it!';
   jigsawPieces=[...jigsawData].sort(()=>Math.random()-0.5);
   document.getElementById('jigsaw-pieces').innerHTML=jigsawPieces.map((p,i)=>`<div class="jigsaw-piece" id="jp-${i}" onclick="selectJigsaw(${i})"><span class="piece-emoji">${p.emoji}</span><span class="piece-label">${p.label}</span></div>`).join('');
-  document.getElementById('jigsaw-slots').innerHTML=jigsawData.map((p,i)=>`<div class="jigsaw-slot" id="js-${i}" onclick="placeJigsaw(${i})" title="${p.state}"><div style="font-size:0.48rem;color:rgba(255,248,231,0.35);text-align:center;padding:2px;line-height:1.3;">${p.state.split(' ').join('<br>')}</div></div>`).join('');
+  document.getElementById('jigsaw-slots').innerHTML=jigsawData.map((p,i)=>`<div class="jigsaw-slot" id="js-${i}" onclick="placeJigsaw(${i})" title="${p.state}"><div style="font-size:clamp(0.55rem,1.1vw,0.72rem);color:rgba(255,255,255,0.92);text-align:center;padding:2px 3px;line-height:1.35;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,0.6);">${p.state.split(' ').join('<br>')}</div></div>`).join('');
+  startJigsawTimer();
 }
 
 function selectJigsaw(i) {
@@ -1462,7 +1487,9 @@ function placeJigsaw(slotIdx) {
     document.getElementById('jigsaw-score').textContent=jigsawCorrect+'/8';
     document.getElementById('jigsaw-hint').textContent='✅ '+piece.hint;
     jigsawSelected=null;
-    if(jigsawCorrect===8){setTimeout(()=>{
+    if(jigsawCorrect===8){
+    stopJigsawTimer(true);
+    setTimeout(()=>{
     document.getElementById('jigsaw-screen').classList.remove('active');
     showResult('jigsaw', 8, 8, () => {
       document.getElementById('jigsaw-screen').classList.add('active');
@@ -1473,6 +1500,55 @@ function placeJigsaw(slotIdx) {
     slot.style.borderColor='var(--rose)';
     document.getElementById('jigsaw-hint').textContent='❌ Nope! Try a different slot.';
     setTimeout(()=>{slot.style.borderColor='';},600);
+  }
+}
+
+// ===== JIGSAW TIMER =====
+let jigsawTimerInterval = null, jigsawTimeLeft = 45, jigsawBestTime = null;
+
+function startJigsawTimer() {
+  clearInterval(jigsawTimerInterval);
+  jigsawTimeLeft = 45;
+  updateJigsawTimerDisplay();
+  const timerEl = document.getElementById('jigsaw-timer');
+  if(timerEl) { timerEl.classList.remove('danger','best'); }
+  jigsawTimerInterval = setInterval(() => {
+    jigsawTimeLeft--;
+    updateJigsawTimerDisplay();
+    const timerEl = document.getElementById('jigsaw-timer');
+    if(jigsawTimeLeft <= 10 && timerEl) timerEl.classList.add('danger');
+    if(jigsawTimeLeft <= 0) {
+      clearInterval(jigsawTimerInterval);
+      document.getElementById('jigsaw-hint').innerHTML = '⏰ <strong>Time\'s Up!</strong> Better luck next time!';
+      document.querySelectorAll('.jigsaw-piece').forEach(p => { p.style.pointerEvents='none'; p.style.opacity='0.45'; });
+      setTimeout(()=>{
+        document.getElementById('jigsaw-screen').classList.remove('active');
+        showResult('jigsaw', jigsawCorrect, 8, () => {
+          document.getElementById('jigsaw-screen').classList.add('active');
+          initJigsaw();
+        });
+      }, 1800);
+    }
+  }, 1000);
+}
+
+function updateJigsawTimerDisplay() {
+  const mins = Math.floor(jigsawTimeLeft / 60);
+  const secs = jigsawTimeLeft % 60;
+  const valEl = document.getElementById('jigsaw-timer-val');
+  if(valEl) valEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+function stopJigsawTimer(solved) {
+  clearInterval(jigsawTimerInterval);
+  if(solved) {
+    const elapsed = 45 - jigsawTimeLeft;
+    if(jigsawBestTime === null || elapsed < jigsawBestTime) jigsawBestTime = elapsed;
+    const timerEl = document.getElementById('jigsaw-timer');
+    if(timerEl) { timerEl.classList.remove('danger'); timerEl.classList.add('best'); }
+    const labelEl = timerEl ? timerEl.querySelector('.timer-label') : null;
+    if(labelEl) labelEl.textContent = '🏆 Best';
+    updateJigsawTimerDisplay();
   }
 }
 
@@ -1502,6 +1578,7 @@ function initMatch() {
       <div class="match-arrow">→</div>
       <div class="match-capital" id="mc2-${i}" onclick="selectMatchCapital(${i})">${matchCapitalsShuffled[i]}</div>
     </div>`).join('');
+  startMatchTimer();
 }
 
 function selectMatchState(i) {
@@ -1522,7 +1599,9 @@ function selectMatchCapital(i) {
     capEl.classList.add('matched'); matchCorrect++;
     document.getElementById('match-score').textContent=matchCorrect+'/'+matchData.length;
     matchSelectedState=null;
-    if(matchCorrect===matchData.length){setTimeout(()=>{
+    if(matchCorrect===matchData.length){
+    stopMatchTimer(true);
+    setTimeout(()=>{
     document.getElementById('match-screen').classList.remove('active');
     showResult('match', matchCorrect, matchData.length, () => {
       document.getElementById('match-screen').classList.add('active');
@@ -1535,9 +1614,62 @@ function selectMatchCapital(i) {
   }
 }
 
+// ===== MATCH TIMER =====
+let matchTimerInterval = null, matchTimeLeft = 45, matchBestTime = null;
+
+function startMatchTimer() {
+  clearInterval(matchTimerInterval);
+  matchTimeLeft = 45;
+  updateMatchTimerDisplay();
+  const timerEl = document.getElementById('match-timer');
+  if(timerEl) { timerEl.classList.remove('danger','best'); }
+  matchTimerInterval = setInterval(() => {
+    matchTimeLeft--;
+    updateMatchTimerDisplay();
+    const timerEl = document.getElementById('match-timer');
+    if(matchTimeLeft <= 10 && timerEl) timerEl.classList.add('danger');
+    if(matchTimeLeft <= 0) {
+      clearInterval(matchTimerInterval);
+      // Disable remaining unmatched items
+      document.querySelectorAll('.match-state:not(.matched),.match-capital:not(.matched)').forEach(el => {
+        el.style.pointerEvents='none'; el.style.opacity='0.45';
+      });
+      setTimeout(()=>{
+        document.getElementById('match-screen').classList.remove('active');
+        showResult('match', matchCorrect, matchData.length, () => {
+          document.getElementById('match-screen').classList.add('active');
+          initMatch();
+        });
+      }, 1800);
+    }
+  }, 1000);
+}
+
+function updateMatchTimerDisplay() {
+  const mins = Math.floor(matchTimeLeft / 60);
+  const secs = matchTimeLeft % 60;
+  const valEl = document.getElementById('match-timer-val');
+  if(valEl) valEl.textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+function stopMatchTimer(solved) {
+  clearInterval(matchTimerInterval);
+  if(solved) {
+    const elapsed = 45 - matchTimeLeft;
+    if(matchBestTime === null || elapsed < matchBestTime) matchBestTime = elapsed;
+    const timerEl = document.getElementById('match-timer');
+    if(timerEl) { timerEl.classList.remove('danger'); timerEl.classList.add('best'); }
+    const labelEl = timerEl ? timerEl.querySelector('.timer-label') : null;
+    if(labelEl) labelEl.textContent = '🏆 Best';
+    updateMatchTimerDisplay();
+  }
+}
+
 // ===== NAV =====
 function startGame(type) {
   clearInterval(resultTimerInterval);
+  clearInterval(jigsawTimerInterval);
+  clearInterval(matchTimerInterval);
   document.getElementById('home').style.display='none';
   document.getElementById(type+'-screen').classList.add('active');
   // Show player name badge in game header
@@ -1562,6 +1694,8 @@ document.addEventListener('keydown', e => {
 function confirmQuit() {
   closeQuitModal();
   clearInterval(resultTimerInterval);
+  clearInterval(jigsawTimerInterval);
+  clearInterval(matchTimerInterval);
   document.querySelectorAll('.game-screen').forEach(s => s.classList.remove('active'));
   document.getElementById('home').style.display = 'none';
   document.getElementById('result-screen').classList.remove('active');
@@ -1605,7 +1739,15 @@ function showResult(game, score, total, replayCallback) {
   document.getElementById('result-message').textContent = message;
 
   if (isMemory || isJigsaw) {
-    document.getElementById('result-score').textContent = '🎉 Puzzle Completed!';
+    let bestTimeStr = '';
+    if (isJigsaw && jigsawBestTime !== null) {
+      const bm = Math.floor(jigsawBestTime/60), bs = jigsawBestTime%60;
+      bestTimeStr = `  •  🏆 Best: ${bm}:${bs<10?'0':''}${bs}`;
+    }
+    document.getElementById('result-score').textContent = '🎉 Puzzle Completed!' + bestTimeStr;
+  } else if (game === 'match' && matchBestTime !== null) {
+    const bm = Math.floor(matchBestTime/60), bs = matchBestTime%60;
+    document.getElementById('result-score').textContent = score + ' / ' + total + ' (' + pct + '%)  •  🏆 Best: ' + bm + ':' + (bs<10?'0':'') + bs;
   } else {
     document.getElementById('result-score').textContent = score + ' / ' + total + ' (' + pct + '%)';
   }
@@ -1646,6 +1788,8 @@ function goToWelcome() {
 }
 
 function goHome() {
+  clearInterval(jigsawTimerInterval);
+  clearInterval(matchTimerInterval);
   document.getElementById('home').style.display='flex';
   document.querySelectorAll('.game-screen').forEach(s=>s.classList.remove('active'));
   // Re-trigger card entrance animations
